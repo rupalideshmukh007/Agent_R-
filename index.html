@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Study Q&A</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      min-height: 100vh;
+      background: linear-gradient(160deg, #0d0d1a 0%, #0f1e3d 60%, #091428 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 20px;
+      user-select: none;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 400px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 22px;
+    }
+
+    .mic-wrap {
+      position: relative;
+      width: 90px;
+      height: 90px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .mic-btn {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      box-shadow: 0 0 20px rgba(99,102,241,0.4);
+      position: relative;
+      z-index: 2;
+    }
+
+    .mic-pulse {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: rgba(99,102,241,0.3);
+      animation: expand 1.6s ease-out infinite;
+      z-index: 1;
+    }
+
+    .mic-pulse.delay { animation-delay: 0.8s; }
+
+    @keyframes expand {
+      0%   { transform: scale(1); opacity: 0.7; }
+      100% { transform: scale(2.2); opacity: 0; }
+    }
+
+    .status-text {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #94a3b8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .dot.blue   { background: #60a5fa; animation: blink 1s ease infinite alternate; }
+    .dot.yellow { background: #f59e0b; animation: blink 0.6s ease infinite alternate; }
+    .dot.green  { background: #4ade80; }
+
+    @keyframes blink {
+      from { opacity: 0.4; }
+      to   { opacity: 1; }
+    }
+
+    .heard-chip {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: #cbd5e1;
+      font-size: 0.82rem;
+      padding: 6px 14px;
+      border-radius: 999px;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-style: italic;
+    }
+
+    .card {
+      width: 100%;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 20px;
+      padding: 22px 20px;
+      display: none;
+    }
+
+    .card.show { display: block; }
+
+    .card.vibrating {
+      animation: shake 0.25s ease infinite;
+      border-color: rgba(74,222,128,0.5);
+      box-shadow: 0 0 24px rgba(74,222,128,0.25), 0 0 0 2px rgba(74,222,128,0.3);
+    }
+
+    @keyframes shake {
+      0%   { transform: translateX(0); }
+      25%  { transform: translateX(-5px); }
+      75%  { transform: translateX(5px); }
+      100% { transform: translateX(0); }
+    }
+
+    .label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #475569;
+      margin-bottom: 10px;
+    }
+
+    .answer-label { color: #4ade80; }
+
+    .question-text {
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: #f1f5f9;
+      line-height: 1.55;
+    }
+
+    .answer-text {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #4ade80;
+      line-height: 1.55;
+    }
+
+    .vib-badge {
+      display: inline-block;
+      background: rgba(74,222,128,0.12);
+      border: 1px solid rgba(74,222,128,0.3);
+      color: #4ade80;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 999px;
+      margin-bottom: 10px;
+      animation: pulse 0.5s ease infinite alternate;
+    }
+
+    @keyframes pulse {
+      from { opacity: 0.7; }
+      to   { opacity: 1; }
+    }
+
+    .hint-box {
+      width: 100%;
+      background: rgba(255,255,255,0.03);
+      border: 1px dashed rgba(255,255,255,0.1);
+      border-radius: 16px;
+      padding: 16px 18px;
+    }
+
+    .hint-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #475569;
+      margin-bottom: 10px;
+    }
+
+    .hint-row {
+      font-size: 0.85rem;
+      color: #64748b;
+      margin-bottom: 6px;
+      line-height: 1.4;
+    }
+
+    .err-card {
+      width: 100%;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 20px;
+      padding: 36px 28px;
+      text-align: center;
+    }
+
+    .err-icon { font-size: 3rem; margin-bottom: 14px; }
+    .err-title { font-size: 1.2rem; font-weight: 700; color: #f1f5f9; margin-bottom: 8px; }
+    .err-sub { font-size: 0.9rem; color: #94a3b8; line-height: 1.6; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Mic -->
+  <div class="mic-wrap" id="micWrap">
+    <div class="mic-btn">🎙️</div>
+  </div>
+
+  <!-- Status -->
+  <p class="status-text" id="statusText">
+    <span class="dot blue"></span> बोला... प्रश्न सांगा
+  </p>
+
+  <!-- Last heard -->
+  <div class="heard-chip" id="heardChip" style="display:none"></div>
+
+  <!-- Question card -->
+  <div class="card" id="questionCard">
+    <p class="label">प्रश्न (Question)</p>
+    <p class="question-text" id="questionText"></p>
+  </div>
+
+  <!-- Answer card -->
+  <div class="card" id="answerCard">
+    <p class="label answer-label">उत्तर (Answer)</p>
+    <div class="vib-badge" id="vibBadge" style="display:none">📳 Vibrating 3s...</div>
+    <p class="answer-text" id="answerText"></p>
+  </div>
+
+  <!-- Hint box -->
+  <div class="hint-box" id="hintBox">
+    <p class="hint-title">Voice Commands:</p>
+    <p class="hint-row">🔍 Question बोला → match होईल</p>
+    <p class="hint-row">🔓 "answer" बोला → उत्तर + vibrate</p>
+    <p class="hint-row">➡️ "next" बोला → पुढचा प्रश्न</p>
+  </div>
+
+  <!-- Error card (hidden by default) -->
+  <div class="err-card" id="errCard" style="display:none">
+    <div class="err-icon">⚠️</div>
+    <p class="err-title">Speech Not Supported</p>
+    <p class="err-sub">Please use <strong>Chrome</strong> on Android.</p>
+  </div>
+</div>
+
+<script>
+  // =============================================
+  // तुमचे प्रश्न-उत्तरे इथे add करा
+  // =============================================
+  const QUESTIONS = [
+    {
+      question: "भारताची राजधानी कोणती आहे?",
+      answer: "नवी दिल्ली (New Delhi)",
+      keywords: ["भारत", "राजधानी", "capital", "india", "bharat"]
+    },
+    {
+      question: "पाण्याचे रासायनिक सूत्र काय आहे?",
+      answer: "H₂O",
+      keywords: ["पाणी", "water", "सूत्र", "formula", "रासायनिक", "paani"]
+    },
+    {
+      question: "महाराष्ट्राची राजधानी कोणती आहे?",
+      answer: "मुंबई (Mumbai)",
+      keywords: ["महाराष्ट्र", "maharashtra", "राजधानी", "mumbai"]
+    },
+    {
+      question: "सूर्य हा कोणत्या प्रकारचा तारा आहे?",
+      answer: "G-type main-sequence star (पिवळा बटु तारा)",
+      keywords: ["सूर्य", "sun", "तारा", "star", "surya"]
+    },
+    {
+      question: "मानवी शरीरात किती हाडे असतात?",
+      answer: "206 हाडे",
+      keywords: ["हाडे", "bones", "शरीर", "body", "haade"]
+    }
+  ];
+  // =============================================
+
+  const ANSWER_TRIGGERS = ["answer", "उत्तर", "aansar", "dakhav", "दाखव", "show", "सांग"];
+  const NEXT_TRIGGERS   = ["next", "पुढे", "pudhe", "pudhil", "पुढील", "nxt"];
+
+  let appState    = "listening"; // listening | matched | answered
+  let currentQ    = null;
+  let shouldRestart = true;
+  let rec         = null;
+  let restartTimer = null;
+
+  // DOM refs
+  const micWrap      = document.getElementById("micWrap");
+  const statusText   = document.getElementById("statusText");
+  const heardChip    = document.getElementById("heardChip");
+  const questionCard = document.getElementById("questionCard");
+  const questionText = document.getElementById("questionText");
+  const answerCard   = document.getElementById("answerCard");
+  const answerText   = document.getElementById("answerText");
+  const vibBadge     = document.getElementById("vibBadge");
+  const hintBox      = document.getElementById("hintBox");
+  const errCard      = document.getElementById("errCard");
+
+  function matchQuestion(spoken) {
+    const norm = spoken.toLowerCase().replace(/[?।,.!]/g, " ");
+    let best = null, bestScore = 0;
+    for (const qa of QUESTIONS) {
+      let score = 0;
+      for (const kw of qa.keywords) {
+        if (norm.includes(kw.toLowerCase())) score++;
+      }
+      if (score > bestScore) { bestScore = score; best = qa; }
+    }
+    return bestScore >= 1 ? best : null;
+  }
+
+  function isAnswerTrigger(s) { return ANSWER_TRIGGERS.some(t => s.toLowerCase().includes(t)); }
+  function isNextTrigger(s)   { return NEXT_TRIGGERS.some(t => s.toLowerCase().includes(t)); }
+
+  function doVibrate() {
+    if ("vibrate" in navigator) navigator.vibrate(3000);
+  }
+
+  function setMicActive(active) {
+    micWrap.innerHTML = active
+      ? `<div class="mic-pulse"></div><div class="mic-pulse delay"></div><div class="mic-btn">🎙️</div>`
+      : `<div class="mic-btn">🎙️</div>`;
+  }
+
+  function render() {
+    hintBox.style.display      = appState === "listening" ? "block" : "none";
+    questionCard.classList.toggle("show", appState === "matched" || appState === "answered");
+    answerCard.classList.toggle("show", appState === "answered");
+
+    if (appState === "listening") {
+      statusText.innerHTML = `<span class="dot blue"></span> बोला... प्रश्न सांगा`;
+    } else if (appState === "matched") {
+      statusText.innerHTML = `<span class="dot yellow"></span> "answer" म्हणा`;
+    } else {
+      statusText.innerHTML = `<span class="dot green"></span> "next" म्हणा पुढच्या प्रश्नासाठी`;
+    }
+  }
+
+  function handleSpeech(text) {
+    heardChip.style.display = "block";
+    heardChip.textContent = `🗣 "${text}"`;
+
+    if (appState === "listening") {
+      const q = matchQuestion(text);
+      if (q) {
+        currentQ = q;
+        appState = "matched";
+        questionText.textContent = q.question;
+      }
+    } else if (appState === "matched") {
+      if (isAnswerTrigger(text)) {
+        appState = "answered";
+        answerText.textContent = currentQ.answer;
+        doVibrate();
+        vibBadge.style.display = "inline-block";
+        answerCard.classList.add("vibrating");
+        setTimeout(() => {
+          vibBadge.style.display = "none";
+          answerCard.classList.remove("vibrating");
+        }, 3000);
+      } else if (isNextTrigger(text)) {
+        appState = "listening";
+        currentQ = null;
+      }
+    } else if (appState === "answered") {
+      if (isNextTrigger(text)) {
+        appState = "listening";
+        currentQ = null;
+        vibBadge.style.display = "none";
+        answerCard.classList.remove("vibrating");
+        if ("vibrate" in navigator) navigator.vibrate(0);
+      }
+    }
+
+    render();
+  }
+
+  function startRec() {
+    if (!shouldRestart) return;
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    rec = new SR();
+    rec.lang = "mr-IN";
+    rec.continuous = false;
+    rec.interimResults = false;
+
+    rec.onstart  = () => setMicActive(true);
+    rec.onend    = () => {
+      setMicActive(false);
+      if (shouldRestart) restartTimer = setTimeout(startRec, 200);
+    };
+    rec.onerror  = (e) => {
+      if (e.error === "not-allowed") {
+        shouldRestart = false;
+        document.querySelector(".container").innerHTML = "";
+        errCard.style.display = "block";
+        document.querySelector(".container").appendChild(errCard);
+        return;
+      }
+      if (shouldRestart) restartTimer = setTimeout(startRec, 600);
+    };
+    rec.onresult = (e) => handleSpeech(e.results[0][0].transcript.trim());
+
+    try { rec.start(); } catch { restartTimer = setTimeout(startRec, 500); }
+  }
+
+  // Init
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    document.querySelector(".container").innerHTML = "";
+    document.querySelector(".container").appendChild(errCard);
+    errCard.style.display = "block";
+  } else {
+    render();
+    startRec();
+  }
+</script>
+</body>
+      </html>
